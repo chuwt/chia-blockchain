@@ -40,6 +40,7 @@ from chia.protocols.protocol_message_types import ProtocolMessageTypes
 from chia.protocols.wallet_protocol import CoinState, CoinStateUpdate
 from chia.server.node_discovery import FullNodePeers
 from chia.server.outbound_message import Message, NodeType, make_msg
+from chia.server.peer_store_resolver import PeerStoreResolver
 from chia.server.server import ChiaServer
 from chia.types.blockchain_format.classgroup import ClassgroupElement
 from chia.types.blockchain_format.pool_target import PoolTarget
@@ -55,6 +56,7 @@ from chia.types.spend_bundle import SpendBundle
 from chia.types.unfinished_block import UnfinishedBlock
 from chia.util.bech32m import encode_puzzle_hash
 from chia.util.check_fork_next_block import check_fork_next_block
+from chia.util.config import PEER_DB_PATH_KEY_DEPRECATED
 from chia.util.db_wrapper import DBWrapper
 from chia.util.errors import ConsensusError, Err
 from chia.util.ints import uint8, uint32, uint64, uint128
@@ -220,10 +222,16 @@ class FullNode:
         try:
             self.full_node_peers = FullNodePeers(
                 self.server,
-                self.root_path,
                 self.config["target_peer_count"] - self.config["target_outbound_peer_count"],
                 self.config["target_outbound_peer_count"],
-                self.config["peer_db_path"],
+                PeerStoreResolver(
+                    self.root_path,
+                    self.config,
+                    selected_network=network_name,
+                    peers_file_path_key="peers_file_path",
+                    legacy_peer_db_path_key=PEER_DB_PATH_KEY_DEPRECATED,
+                    default_peers_file_path="db/peers.dat",
+                ),
                 self.config["introducer_peer"],
                 dns_servers,
                 self.config["peer_connect_interval"],
